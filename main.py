@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import time
 import os
 import sys
-import threading
+import msvcrt
 
 def main():
     model = YOLO("runs/detect/train_perceive4/weights/best.pt")
@@ -40,17 +40,7 @@ def main():
     rewards = []         # store rewards
 
 
-    stop_flag = False
-
-    def wait_for_enter():
-        global stop_flag
-        input("Press Enter to stop the game and train...\n")
-        stop_flag = True
-
-    threading.Thread(target=wait_for_enter, daemon=True).start()
-
-
-    while not stop_flag:
+    for _ in range(20):
         # Determine current interval based on game time
         elapsed = datetime.now() - start_time
         interval = fast_interval if elapsed >= game_minute else regular_interval
@@ -105,7 +95,7 @@ def main():
 
         # Wait until next tick
         time.sleep(interval)
-
+        
     from process import update_policy
     update_policy(log_probs, rewards)
     print("Training complete. Weights saved.")
