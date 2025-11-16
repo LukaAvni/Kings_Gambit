@@ -1,0 +1,6 @@
+vision/
+king_venv/
+labels/
+runs/
+*.pt
+zt.py
