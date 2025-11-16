@@ -1,18 +1,17 @@
 import mss
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
-monitor = {'top': 75, 'left': 650, 'width': 550, 'height': 650} #for training
+monitor = {'top': 0, 'left': 0, 'width': 1600, 'height': 1200} #for deck
+#monitor = {'top': 75, 'left': 650, 'width': 550, 'height': 650} #for field
 
 with mss.mss() as sct:
-    while True:
-        screenshot = sct.grab(monitor)
-        frame = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+    screenshot = sct.grab(monitor)
+    frame = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
 
-        cv2.imshow("Preview - Press Q to exit", frame)
-
-        # Press Q to close preview
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-cv2.destroyAllWindows()
+# Display using matplotlib
+plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+plt.title("Preview")
+plt.axis('off')
+plt.show()

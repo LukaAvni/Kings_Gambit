@@ -4,3 +4,5 @@ labels/
 runs/
 *.pt
 zt.py
+__pycache__/
+templates/
