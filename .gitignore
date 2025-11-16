@@ -6,3 +6,4 @@ runs/
 zt.py
 __pycache__/
 templates/
+*.pth

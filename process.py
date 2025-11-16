@@ -41,10 +41,8 @@ else:
     print("Starting fresh brain")
 
 def select_action(state_tensor):
-    brain.eval()  # not training yet
     state_tensor = state_tensor.to(DEVICE)
-    with torch.no_grad():
-        card_probs, zone_probs = brain(state_tensor)
+    card_probs, zone_probs = brain(state_tensor)
     
     # create distributions
     card_dist = torch.distributions.Categorical(card_probs)
