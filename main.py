@@ -37,6 +37,12 @@ def main():
         # Debug / log current state
         print(f"Elixir: {elixir}\nHP: {hp}\nTroops: {troops}\nHand: {hand}")
 
+        # Brain chooses an action
+        card_choice, drop_choice = think.brain(elixir, hp, troops, hand)
+
+        # Execute the action
+        act.play(card_choice, drop_choice)
+
         # Wait until next tick
         time.sleep(interval)
     
