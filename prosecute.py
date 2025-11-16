@@ -1,5 +1,7 @@
 from pynput.mouse import Controller, Button
 import time
+import os
+import cv2
 
 mouse = Controller()
 
@@ -37,6 +39,7 @@ def play(card, drop):
     mouse.release(Button.left)
 
     print(f"Played card {card} to zone {drop}.")
+
 
 def main():
     pass

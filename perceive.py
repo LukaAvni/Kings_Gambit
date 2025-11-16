@@ -25,13 +25,16 @@ def run_detection(model):
     results = model.predict(frame, imgsz=640, conf=0.25)
 
     troops_on_field = []
+    troops_coords = []
 
     for r in results:
         classes = r.boxes.cls.cpu().numpy()
-        for cls in classes:
+        boxes = r.boxes.xyxy.cpu().numpy()
+        for cls, box in zip(classes, boxes):
             troops_on_field.append(model.names[int(cls)])
+            troops_coords.append(box.tolist())
 
-    return troops_on_field
+    return troops_on_field, troops_coords
 
 def read_tower_hp(hps):
     
@@ -39,37 +42,53 @@ def read_tower_hp(hps):
         full = np.array(sct.grab({'top': 75, 'left': 650, 'width': 550, 'height': 650}))
         full = cv2.cvtColor(full, cv2.COLOR_BGRA2BGR)
     
-    crops = [ full[570:600, 100:160], # tower 1
-              full[570:600, 390:450], # tower 2 
-              full[80:110, 100:160],  # tower 3 
-              full[80:110, 390:450],  # tower 4
-                ]
-    results_raw = [] # Temporarily holds the raw HP strings from OCR
-    for c in crops: 
-        txt = reader.readtext(c, detail=0) 
-        results_raw.append(txt[0] if txt else "0") 
-        
-    # Constant max possible HP for a single tower (used for percentage calculation)
-    TOWER_MAX_HP = 3052.0 
+    crops = [
+        full[570:600, 100:160],   # tower 1
+        full[570:600, 390:450],   # tower 2 
+        full[80:110, 100:160],    # tower 3 
+        full[80:110, 390:450],    # tower 4
+    ]
     
+    # Read raw OCR text
+    results_raw = []
+    for c in crops:
+        txt = reader.readtext(c, detail=0)
+        results_raw.append(txt[0] if txt else None)
+
+    TOWER_MAX_HP = 3052.0
     final_hp_percents = []
-    
-    for i, num_str in enumerate(results_raw):
-        
-        previous_percent = float(hps[i])
-        
+
+    for i, raw in enumerate(results_raw):
+
+        previous_percent = float(hps[i]) if hps[i] is not None else 1.0
         new_percent = previous_percent
-        
-        if num_str.isdigit():
-            current_hp_raw = float(num_str)
-        
-            observed_percent = current_hp_raw / TOWER_MAX_HP
-            
-            if observed_percent > previous_percent:
+
+        # ---- RULE: if tower is already dead skip all logic ----
+        if previous_percent == 0:
+            final_hp_percents.append(0)
+            continue
+
+        # ---- RULE: If OCR returned nothing, NaN, or invalid ----
+        if raw is None or not raw.isdigit():
+            # If tower had >20% last tick, keep old value
+            if previous_percent > 0.2:
                 new_percent = previous_percent
             else:
-                new_percent = observed_percent
-                
+                # Tower was critically low; missing text likely means 0
+                new_percent = 0
+            final_hp_percents.append(new_percent)
+            continue
+
+        # ---- OCR returned a real number ----
+        current_hp_raw = float(raw)
+        observed_percent = current_hp_raw / TOWER_MAX_HP
+
+        # RULE: HP cannot increase
+        if observed_percent > previous_percent:
+            new_percent = previous_percent
+        else:
+            new_percent = observed_percent
+
         final_hp_percents.append(new_percent)
 
     return final_hp_percents
